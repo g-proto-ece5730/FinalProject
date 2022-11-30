@@ -1,0 +1,1 @@
+![Block Diagram](docs/block_diagram.drawio.svg)
