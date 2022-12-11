@@ -1,3 +1,11 @@
 .vscode/
+db/
+incremental_db/
+simulation/
 
 **/FinalProjectRequirements_Fall2022.pdf
+
+*.done
+*.rpt
+*.htm
+*.summary
