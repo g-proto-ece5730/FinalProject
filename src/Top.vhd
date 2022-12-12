@@ -64,8 +64,9 @@ architecture behavioral of Top is
 
             -- Controls port group
             start_btn   : in std_logic;
-            dir_control : in std_logic_vector(11 downto 0);
-        )
+            dir_control : in std_logic_vector(11 downto 0)
+        );
+        end component GrameEngine;
 
     component GraphicsEngine is
         port (
@@ -83,9 +84,21 @@ architecture behavioral of Top is
             vga_x     : in std_logic_vector(9 downto 0);
             vga_y     : in std_logic_vector(8 downto 0);
             vga_valid : in std_logic;
-            vga_rgb   : out std_logic;
+            vga_rgb   : out std_logic
         );
     end component GraphicsEngine;
+
+    component VGA is 
+        port (
+            pxclk : in std_logic;
+            rst_n : in std_logic;
+            xaddr : out unsigned(9 downto 0);
+            yaddr : out unsigned(8 downto 0);
+            addr_valid : out std_logic;
+            HS : out std_logic;
+            VS : out std_logic
+        );
+    end component VGA;
 
 begin
     

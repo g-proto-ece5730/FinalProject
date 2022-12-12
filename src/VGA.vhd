@@ -4,8 +4,8 @@ use ieee.numeric_std.all;
 
 entity VGA is
     port (
-        rst_n : in std_logic;
         pxclk : in std_logic;
+        rst_n : in std_logic;
         xaddr : out unsigned(9 downto 0);
         yaddr : out unsigned(8 downto 0);
         addr_valid : out std_logic;
