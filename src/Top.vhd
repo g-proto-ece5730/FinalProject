@@ -46,13 +46,14 @@ architecture behavioral of Top is
         port (
             clk   : in std_logic;
             rst_n : in std_logic;
+            VS    : in std_logic;
 
             -- Graphics Engine port group
-            gfx_en        : out std_logic;
-            gfx_blk_num_n : out std_logic;
-            gfx_x         : out std_logic_vector(3 downto 0);
-            gfx_y         : out std_logic_vector(3 downto 0);
-            gfx_data      : in std_logic_vector(3 downto 0);
+            gfx_en        : in std_logic;
+            gfx_blk_num_n : in std_logic;
+            gfx_hpos      : in unsigned(3 downto 0);
+            gfx_vpos      : in unsigned(3 downto 0);
+            gfx_data      : out std_logic_vector(3 downto 0);
 
             -- RNG port group
             rng_en : out std_logic;
@@ -66,7 +67,7 @@ architecture behavioral of Top is
             start_btn   : in std_logic;
             dir_control : in std_logic_vector(11 downto 0)
         );
-        end component GrameEngine;
+        end component GameEngine;
 
     component GraphicsEngine is
         port (
@@ -76,8 +77,8 @@ architecture behavioral of Top is
             -- Game Engine port group
             game_en         : out std_logic;
             game_blk_num_n  : out std_logic;
-            game_x          : out std_logic_vector(3 downto 0);
-            game_y          : out std_logic_vector(3 downto 0);
+            game_hpos       : out unsigned(3 downto 0);
+            game_vpos       : out unsigend(3 downto 0);
             game_data       : in std_logic_vector(3 downto 0);
     
             -- VGA port group
