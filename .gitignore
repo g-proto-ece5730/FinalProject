@@ -2,6 +2,7 @@
 db/
 incremental_db/
 simulation/
+greybox_tmp/
 
 **/FinalProjectRequirements_Fall2022.pdf
 

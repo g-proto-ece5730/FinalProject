@@ -299,3 +299,5 @@ set_global_assignment -name VHDL_FILE src/Top.vhd
 set_global_assignment -name VHDL_FILE src/FontLUT_TB.vhd
 set_global_assignment -name VHDL_FILE src/FontLUT.vhd
 set_global_assignment -name SDC_FILE FinalProject.SDC
+set_global_assignment -name QIP_FILE ip/FontFIFO.qip
+set_global_assignment -name QIP_FILE ip/BlockFIFO.qip
