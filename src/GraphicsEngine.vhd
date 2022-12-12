@@ -16,10 +16,10 @@ entity GraphicsEngine is
         game_data        : in std_logic_vector(3 downto 0);
 
         -- VGA port group
-        vga_x     : in std_logic_vector(9 downto 0);
-        vga_y     : in std_logic_vector(8 downto 0);
+        vga_x     : in unsigned(9 downto 0);
+        vga_y     : in unsigned(8 downto 0);
         vga_valid : in std_logic;
-        vga_rgb   : out std_logic;
+        vga_rgb   : out std_logic
     );
 end entity GraphicsEngine;
 
@@ -98,15 +98,15 @@ architecture behavioral of GraphicsEngine is
     constant GRID_W     : natural := 9;
     constant GRID_H     : natural := 14;
     constant GRID_X     : natural := 177;
-    constant GRID_Y     : natural := 17
+    constant GRID_Y     : natural := 17;
     constant GRID_X2    : natural := GRID_X + GRID_W;
-    constant GRID_Y2    : natural := GRIX_Y + GRIX_H;
+    constant GRID_Y2    : natural := GRID_Y + GRID_H;
 
     constant BORDER_W   : natural := 290;
     constant BORDER_H   : natural := 450;
     constant BORDER_X   : natural := GRID_X - 1;
     constant BORDER_Y   : natural := GRID_Y - 1;
-    constant BORDER_X2  : nautral := BORDER_X + BORDER_W;
+    constant BORDER_X2  : natural := BORDER_X + BORDER_W;
     constant BORDER_Y2  : natural := BORDER_Y + BORDER_H;
 
     constant FONT_W     : natural := 8;
@@ -127,6 +127,7 @@ architecture behavioral of GraphicsEngine is
     --------------------------------------------------
     signal is_blk_row   : std_logic;
     signal is_score_row : std_logic;
+    signal rst : std_logic;
     --------------------------------------------------
     -- END: ALIASES & WIRES
     --------------------------------------------------
@@ -152,7 +153,7 @@ architecture behavioral of GraphicsEngine is
         PREFETCH,
         DRAW
     );
-    signal lookup_state : LOOKUP_STATE_T;
+    -- signal lookup_state : LOOKUP_STATE_T;
     --------------------------------------------------
     -- END: STATE MACHINES
     --------------------------------------------------
@@ -205,8 +206,8 @@ begin
     --------------------------------------------------
     -- BEGIN: WIRING
     --------------------------------------------------
-    is_blk_row   <= (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2);
-    is_score_row <= (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2);
+    is_blk_row   <= '1' when ((to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2)) else '0';
+    is_score_row <= '1' when ((to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2)) else '0';
     --------------------------------------------------
     -- END: WIRING
     --------------------------------------------------
@@ -260,8 +261,8 @@ begin
                             color_en   <= '0';
                             bfifo_wreq <= '0';
                             if (is_score_row = '1') then
-                                prefetch_state      <= FETCH_SCORE
-                                game_block_score _n <= '0';
+                                prefetch_state      <= FETCH_SCORE;
+                                game_block_score_n <= '0';
                                 game_hpos           <= (others => '0');
                                 font_en             <= '1';
                                 font_x              <= (others => '0');
@@ -297,6 +298,7 @@ begin
                                 game_en         <= '0';
                                 font_en         <= '0';
                                 ffifo_wreq      <= '0';
+                            end if;
                         end if;
 
                     when others =>

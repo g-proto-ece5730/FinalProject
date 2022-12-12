@@ -49,11 +49,11 @@ architecture behavioral of Top is
             VS    : in std_logic;
 
             -- Graphics Engine port group
-            gfx_en        : in std_logic;
-            gfx_blk_num_n : in std_logic;
-            gfx_hpos      : in unsigned(3 downto 0);
-            gfx_vpos      : in unsigned(3 downto 0);
-            gfx_data      : out std_logic_vector(3 downto 0);
+            game_en        : in std_logic;
+            game_blk_score_n : in std_logic;
+            game_hpos      : in unsigned(3 downto 0);
+            game_vpos      : in unsigned(3 downto 0);
+            game_data      : out std_logic_vector(3 downto 0);
 
             -- RNG port group
             rng_en : out std_logic;
@@ -76,14 +76,14 @@ architecture behavioral of Top is
     
             -- Game Engine port group
             game_en         : out std_logic;
-            game_blk_num_n  : out std_logic;
+            game_blk_score_n  : out std_logic;
             game_hpos       : out unsigned(3 downto 0);
-            game_vpos       : out unsigend(3 downto 0);
+            game_vpos       : out unsigned(3 downto 0);
             game_data       : in std_logic_vector(3 downto 0);
     
             -- VGA port group
-            vga_x     : in std_logic_vector(9 downto 0);
-            vga_y     : in std_logic_vector(8 downto 0);
+            vga_x     : in unsigned(9 downto 0);
+            vga_y     : in unsigned(8 downto 0);
             vga_valid : in std_logic;
             vga_rgb   : out std_logic
         );
