@@ -99,15 +99,13 @@ architecture behavioral of GraphicsEngine is
     constant GRID_H     : natural := 14;
     constant GRID_X     : natural := 177;
     constant GRID_Y     : natural := 17
-    constant GRID_X2    : natural := GRID_X + GRID_W;
-    constant GRID_Y2    : natural := GRIX_Y + GRIX_H;
+    constant GRID_X2    : natural := GRID_X + (BLOCK_W * GRID_W) - 1;
+    constant GRID_Y2    : natural := GRID_Y + (BLOCK_H * GRID_H) - 1;
 
-    constant BORDER_W   : natural := 290;
-    constant BORDER_H   : natural := 450;
     constant BORDER_X   : natural := GRID_X - 1;
     constant BORDER_Y   : natural := GRID_Y - 1;
-    constant BORDER_X2  : nautral := BORDER_X + BORDER_W;
-    constant BORDER_Y2  : natural := BORDER_Y + BORDER_H;
+    constant BORDER_X2  : nautral := GRID_X2 + 1;
+    constant BORDER_Y2  : natural := GRID_Y2 + 1;
 
     constant FONT_W     : natural := 8;
     constant FONT_H     : natural := 16;
@@ -115,20 +113,27 @@ architecture behavioral of GraphicsEngine is
     constant SCORE_W    : natural := 6;
     constant SCORE_X    : natural := 480;
     constant SCORE_Y    : natural := 320;
-    constant SCORE_X2   : natural := SCORE_X + (SCORE_W * FONT_SCALE * FONT_W);
-    constant SCORE_Y2   : natural := SCORE_Y + (FONT_SCALE * FONT_H);
+    constant SCORE_X2   : natural := SCORE_X + (FONT_SCALE * FONT_W * SCORE_W) - 1;
+    constant SCORE_Y2   : natural := SCORE_Y + (FONT_SCALE * FONT_H) - 1;
     --------------------------------------------------
     -- END: CONSTANTS
     --------------------------------------------------
 
 
     --------------------------------------------------
-    -- BEGIN: ALIASES & WIRES
+    -- BEGIN: WIRES
     --------------------------------------------------
-    signal is_blk_row   : std_logic;
-    signal is_score_row : std_logic;
+    signal is_blk_y        : std_logic;
+    signal is_score_y      : std_logic;
+    signal is_border_b_y   : std_logic;
+    signal is_pre_grid_x   : std_logic;
+    signal is_post_grid_x  : std_logic;
+    signal is_post_grid_x2 : std_logic;
+    signal is_pre_score_x  : std_logic;
+    signal is_pre_score_x2 : std_logic;
+    signal is_post_score_x : std_logic;
     --------------------------------------------------
-    -- END: ALIASES & WIRES
+    -- END: WIRES
     --------------------------------------------------
 
 
@@ -137,7 +142,7 @@ architecture behavioral of GraphicsEngine is
     --------------------------------------------------
     -- Prefetch FSM
     type PREFETCH_STATE_T is (
-        IDLE,
+        PREFETCH_IDLE,
         FETCH_BLOCKS,
         FETCH_SCORE
     );
@@ -148,11 +153,15 @@ architecture behavioral of GraphicsEngine is
 
     -- Draw FSM
     type DRAW_STATE_T is (
-        IDLE,
-        PREFETCH,
-        DRAW
+        DRAW_IDLE,
+        DRAW_BORDER_L
+        DRAW_BLOCKS,
+        DRAW_ORDER_R,
+        DRAW_SCORE
+        DRAW_BORDER_B,
     );
-    signal lookup_state : LOOKUP_STATE_T;
+    signal draw_state : DRAW_STATE_T;
+    signal draw_blk_x : natural range 0 to BLOCK_W-1;
     --------------------------------------------------
     -- END: STATE MACHINES
     --------------------------------------------------
@@ -205,8 +214,15 @@ begin
     --------------------------------------------------
     -- BEGIN: WIRING
     --------------------------------------------------
-    is_blk_row   <= (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2);
-    is_score_row <= (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2);
+    is_blk_y        <= (vga_valid = '1') and (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2);
+    is_score_y      <= (vga_valid = '1') and (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2);
+    is_border_b_y   <= (vga_valid = '1') and (to_integer(vga_y) = BORDER_Y2);
+    is_pre_grid_x   <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X - 2);
+    is_post_grid_x  <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X2 - 1);
+    is_post_grid_x2 <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X2);
+    is_pre_score_x  <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 2);
+    is_pre_score_x2 <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 1);
+    is_post_score_x <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 1);
     --------------------------------------------------
     -- END: WIRING
     --------------------------------------------------
@@ -223,17 +239,17 @@ begin
     begin
         if rising_edge(pxclk) then
             if (rst_n = '0') then
+                prefetch_state  <= PREFETCH_IDLE;
                 game_en         <= '0';
                 color_en        <= '0';
                 font_en         <= '0';
                 bfifo_wreq      <= '0';
                 ffifo_wreq      <= '0';
-                prefetch_state  <= IDLE;
             else
                 case prefetch_state is
 
-                    when IDLE =>
-                        if (vga_valid = '1') and (vga_x = (others => '0')) and (is_blk_row = '1') then
+                    when PREFETCH_IDLE =>
+                        if (vga_valid = '1') and (vga_x = (others => '0')) and (is_blk_y = '1') then
                             prefetch_state      <= FETCH_BLOCKS;
                             game_en             <= '1';
                             game_block_score_n  <= '1';
@@ -259,7 +275,7 @@ begin
                         else
                             color_en   <= '0';
                             bfifo_wreq <= '0';
-                            if (is_score_row = '1') then
+                            if (is_score_y = '1') then
                                 prefetch_state      <= FETCH_SCORE
                                 game_block_score _n <= '0';
                                 game_hpos           <= (others => '0');
@@ -278,7 +294,7 @@ begin
                                     end if;
                                 end if;
                             else
-                                prefetch_state <= IDLE;
+                                prefetch_state <= PREFETCH_IDLE;
                                 game_en        <= '0';
                             end if;
                         end if;
@@ -293,26 +309,134 @@ begin
                                 game_hpos <= game_hpos + '1';
                                 font_x    <= (others => '0');
                             else
-                                prefetch_state  <= IDLE;
+                                prefetch_state  <= PREFETCH_IDLE;
                                 game_en         <= '0';
                                 font_en         <= '0';
                                 ffifo_wreq      <= '0';
                         end if;
 
                     when others =>
+                        prefetch_state  <= PREFETCH_IDLE;
                         game_en         <= '0';
                         color_en        <= '0';
                         font_en         <= '0';
                         bfifo_wreq      <= '0';
                         ffifo_wreq      <= '0';
-                        prefetch_state  <= IDLE;
 
-                end case;
+                end case; -- prefetch_state
             end if; -- (rst_n = '0')
         end if; -- rising_edge(pxclk)
     end process; -- prefetch_proc
     --------------------------------------------------
     -- END: PREFETCH FSM
+    --------------------------------------------------
+
+
+    --------------------------------------------------
+    -- BEGIN: DRAW FSM
+    --------------------------------------------------
+    draw_proc : process (pxclk)
+    begin
+        if rising_edge(pxclk) then
+            if (rst_n = '0') then
+                draw_state  <= DRAW_IDLE;
+                vga_rgb     <= (others => '0');
+                bfifo_rack  <= '0';
+                ffifo_rack  <= '0';
+            else
+                case draw_state is
+
+                    when DRAW_IDLE =>
+                        if (is_blk_y = '1') then
+                            -- block row
+                            if (is_pre_grid_x = '1') then
+                                -- draw left border and get first block color
+                                draw_state  <= DRAW_BORDER_L;
+                                vga_rgb     <= (others => '1');
+                                bfifo_rack  <= '1';
+                            end if;
+                        end if;
+                        if (is_score_y = '1') then
+                            -- score row
+                            if (is_pre_score_x = '1') then
+                                -- get first score pixel
+                                ffifo_rack  <= '1';
+                            end if;
+                            if (is_pre_score_x2 = '1') then
+                                -- start drawing score
+                                draw_state  <= DRAW_SCORE;
+                                vga_rgb     <= ffifo_dout;
+                        end if;
+                        if (is_border_b_y = '1') then
+                            -- bottom border row
+                            if (is_pre_grid_x = '1') then
+                                -- start botton border
+                                draw_state    <= DRAW_BORDER_B;
+                                vga_rgb       <= (others => '1');
+                            end if;
+                        end if;
+
+                    when DRAW_BORDER_L =>
+                        draw_state  <= DRAW_BLOCKS;
+                        vga_rgb     <= bfifo_dout;
+                        bfifo_rack  <= '0';
+                        draw_blk_x  <= (others => '0');
+
+                    when DRAW_BLOCKS =>
+                        if (draw_blk_x < BLOCK_W-1) then
+                            draw_blk_x <= draw_blk_x + '1';
+                        else
+                            -- end of block
+                            if (is_post_grid_x2 = '1') then
+                                -- end of grid
+                                draw_state  <= DRAW_BORDER_R;
+                                vga_rgb     <= (others => '1');
+                            else
+                                -- start next block
+                                vga_rgb     <= bfifo_dout;
+                                bfifo_rack  <= '0';
+                                draw_blk_x  <= (others => '0');
+                            end if;
+                        end if;
+                        if (draw_blk_x = BLOCK_W-2) and (is_post_grid_x = '0') then
+                            -- get next block color if not end of grid
+                            bfifo_rack  <= '1';
+                        end if;
+
+                    when DRAW_BORDER_R =>
+                        draw_state  <= DRAW_IDLE;
+                        vga_rgb     <= (others => '0');
+
+                    when DRAW_SCORE =>
+                        if (ffifo_rack = '1') then
+                            -- draw next score pixel
+                            vga_rgb <= ffifo_dout;
+                        else
+                            -- all pixels drawn
+                            draw_state <= DRAW_IDLE;
+                        end if;
+                        if (is_post_score_x = '1') then
+                            -- all pixels pulled from FIFO
+                            ffifo_rack <= '0';
+                        end if;
+
+                    when DRAW_BORDER_B =>
+                        if (is_post_grid_x = '1') then
+                            draw_state <= DRAW_BORDER_R;
+                        end if;
+
+                    WHEN others =>
+                        draw_state  <= DRAW_IDLE;
+                        vga_rgb     <= (others => '0');
+                        bfifo_rack  <= '0';
+                        ffifo_rack  <= '0';
+
+                end case; -- draw_state
+            end if; -- (rst_n = '0')
+        end if; -- rising_edge(pxclk)
+    end process; -- draw_proc
+    --------------------------------------------------
+    -- END: DRAW FSM
     --------------------------------------------------
 
 end architecture behavioral;
