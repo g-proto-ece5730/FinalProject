@@ -16,10 +16,10 @@ entity GraphicsEngine is
         game_data        : in std_logic_vector(3 downto 0);
 
         -- VGA port group
-        vga_x     : in std_logic_vector(9 downto 0);
-        vga_y     : in std_logic_vector(8 downto 0);
+        vga_x     : in unsigned(9 downto 0);
+        vga_y     : in unsigned(8 downto 0);
         vga_valid : in std_logic;
-        vga_rgb   : out std_logic;
+        vga_rgb   : out std_logic
     );
 end entity GraphicsEngine;
 
@@ -98,7 +98,7 @@ architecture behavioral of GraphicsEngine is
     constant GRID_W     : natural := 9;
     constant GRID_H     : natural := 14;
     constant GRID_X     : natural := 177;
-    constant GRID_Y     : natural := 17
+    constant GRID_Y     : natural := 17;
     constant GRID_X2    : natural := GRID_X + (BLOCK_W * GRID_W) - 1;
     constant GRID_Y2    : natural := GRID_Y + (BLOCK_H * GRID_H) - 1;
 
@@ -123,6 +123,7 @@ architecture behavioral of GraphicsEngine is
     --------------------------------------------------
     -- BEGIN: WIRES
     --------------------------------------------------
+    signal rst             : std_logic;
     signal is_blk_y        : std_logic;
     signal is_score_y      : std_logic;
     signal is_border_b_y   : std_logic;
@@ -214,16 +215,16 @@ begin
     --------------------------------------------------
     -- BEGIN: WIRING
     --------------------------------------------------
-    is_blk_y        <= (vga_valid = '1') and (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2);
-    is_score_y      <= (vga_valid = '1') and (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2);
-    is_border_b_y   <= (vga_valid = '1') and (to_integer(vga_y) = BORDER_Y2);
-    is_pre_grid_x   <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X - 2);
-    is_post_grid_x  <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X2 - 1);
-    is_post_grid_x2 <= (vga_valid = '1') and (to_integer(vga_x) = GRID_X2);
-    is_pre_score_x  <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 2);
-    is_pre_score_x2 <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 1);
-    is_post_score_x <= (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 1);
-    --------------------------------------------------
+    rst             <= ~rst_n
+    is_blk_y        <= '1' when (vga_valid = '1') and (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2) else '0';
+    is_score_y      <= '1' when (vga_valid = '1') and (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2) else '0';
+    is_border_b_y   <= '1' when (vga_valid = '1') and (to_integer(vga_y) = BORDER_Y2) else '0';
+    is_pre_grid_x   <= '1' when (vga_valid = '1') and (to_integer(vga_x) = GRID_X - 2) else '0';
+    is_post_grid_x  <= '1' when (vga_valid = '1') and (to_integer(vga_x) = GRID_X2 - 1) else '0';
+    is_post_grid_x2 <= '1' when (vga_valid = '1') and (to_integer(vga_x) = GRID_X2) else '0';
+    is_pre_score_x  <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 2) else '0';
+    is_pre_score_x2 <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 1) else '0';
+    is_post_score_x <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 1) else '0'
     -- END: WIRING
     --------------------------------------------------
 
@@ -276,7 +277,7 @@ begin
                             color_en   <= '0';
                             bfifo_wreq <= '0';
                             if (is_score_y = '1') then
-                                prefetch_state      <= FETCH_SCORE
+                                prefetch_state      <= FETCH_SCORE;
                                 game_block_score _n <= '0';
                                 game_hpos           <= (others => '0');
                                 font_en             <= '1';
@@ -313,6 +314,7 @@ begin
                                 game_en         <= '0';
                                 font_en         <= '0';
                                 ffifo_wreq      <= '0';
+                            end if;
                         end if;
 
                     when others =>

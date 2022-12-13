@@ -42,9 +42,9 @@ begin
 	VS    <= not v_sync;
 	addr_valid <= '1' when (h_state = VISIBLE) and (v_state = VISIBLE) else '0';
 
-    h_process : process(px_clk)
+    h_process : process(pxclk)
     begin
-        if rising_edge(px_clk) then
+        if rising_edge(pxclk) then
             if (rst_n = '0') then
                 x <= (others => '0');
 				new_line <= '0';
@@ -100,9 +100,9 @@ begin
         end if;
     end process; -- h_process
 
-	v_process : process(px_clk)
+	v_process : process(pxclk)
 	begin
-		if rising_edge(px_clk) then
+		if rising_edge(pxclk) then
             if (rst_n = '0') then
                 y <= (others => '0');
 				v_sync <= '0';
