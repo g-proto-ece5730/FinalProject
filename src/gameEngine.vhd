@@ -85,43 +85,38 @@ begin
         search_fin <= '0';
         blocks_fell <= '1';
       else
-        if (search_en = '1') then
-          if (blocks_fell = '1') then
-            for j in 13 downto 0 loop
-              for i in 0 to 6 loop
-                -- BUFFER_ARR(0) <= BLOCK_ARR(j)(i);
-                -- BUFFER_ARR(1) <= BLOCK_ARR(j)(i+1);
-                -- BUFFER_ARR(2) <= BLOCK_ARR(j)(i+2);
-                if (BLOCK_ARR(j)(i) = BLOCK_ARR(j)(i+1) = BLOCK_ARR(j)(i+2)) then
-                  BLOCK_ARR(j)(i) <= x"0";
-                  BLOCK_ARR(j)(i+1) <= x"0";
-                  BLOCK_ARR(j)(i+2) <= x"0";
-                  if (BLOCK_ARR(j+1)(i) != x"0") then
-                    BLOCK_ARR(j)(i) <= BLOCK_ARR(j+1)(i);
-                    BLOCK_ARR(j+1)(i) <= x"0";
-                    blocks_fell <= '1';
-                  end if;
-                  if (BLOCK_ARR(j+1)(i+1) != x"0") then
-                    BLOCK_ARR(j)(i+1) <= BLOCK_ARR(j+1)(i+1);
-                    BLOCK_ARR(j+1)(i+1) <= x"0";
-                    blocks_fell <= '1';
-                  end if;
-                  if (BLOCK_ARR(j+1)(i) != x"0") then
-                    BLOCK_ARR(j)(i+2) <= BLOCK_ARR(j+1)(i+2);
-                    BLOCK_ARR(j+1)(i+1) <= x"0";
-                    blocks_fell <= '1';
-                  end if;
-                else
-                  blocks_fell <= '0';
-                end if;
-              end loop; 
-            end loop;
+        -- check for 3 in a row to the left of the placed block
+        if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y)(prev_d_block_x - 1)) then
+          if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y)(prev_d_block_x - 2)) then
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x - 1) <= x"0";
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x - 2) <= x"0";
           end if;
-          search_fin <= '1';
-        else
-          search_fin <= '0';
         end if;
-
+        -- check for 3 in a row above the placed block
+        if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y - 1)(prev_d_block_x)) then
+          if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y - 2)(prev_d_block_x)) then
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y - 1)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y - 2)(prev_d_block_x) <= x"0";
+          end if;
+        end if;
+        -- check for 3 in a row to the right of the placed block
+        if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y)(prev_d_block_x + 1)) then
+          if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y)(prev_d_block_x + 2)) then
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x + 1) <= x"0";
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x + 2) <= x"0";
+          end if;
+        end if;
+        -- check for 3 in a row below the placed block
+        if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y + 1)(prev_d_block_x)) then
+          if (BLOCK_ARR(prev_d_block_y)(prev_d_block_x) = BLOCK_ARR(prev_d_block_y + 2)(prev_d_block_x)) then
+            BLOCK_ARR(prev_d_block_y)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y + 1)(prev_d_block_x) <= x"0";
+            BLOCK_ARR(prev_d_block_y + 2)(prev_d_block_x) <= x"0";
+          end if;
+        end if;
       end if; -- rst_n = '0'
     end if; -- rising_edge(clk)
   end process; -- search_proc
