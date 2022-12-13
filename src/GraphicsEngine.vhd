@@ -32,12 +32,12 @@ architecture behavioral of GraphicsEngine is
     component ColorLUT is
         port (
             en  : std_logic;
-            sel : std_logic_vector(2 downto 0);
+            sel : unsigned(2 downto 0);
             rgb : std_logic_vector(23 downto 0)
         );
     end component ColorLUT;
     signal color_en  : std_logic;
-    signal color_sel : std_logic_vector(2 downto 0);
+    signal color_sel : unsigned(2 downto 0);
     signal color_rgb : std_logic_vector(23 downto 0);
 
     component BlockFIFO is
@@ -216,8 +216,8 @@ begin
     --------------------------------------------------
     -- BEGIN: PREFETCH FSM
     --------------------------------------------------
-    color_sel <= game_data;
-    font_sel  <= game_data;
+    color_sel <= unsigned(game_data);
+    font_sel  <= unsigned(game_data);
     bfifo_din <= color_rgb;
     ffifo_din <= font_px;
     prefetch_proc : process (pxclk)
