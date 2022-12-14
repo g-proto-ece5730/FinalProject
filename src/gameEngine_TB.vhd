@@ -85,12 +85,17 @@ begin
     start <= '0';
     dir <= (others => '0');
 
-    wait for CLK_PERIOD*2;
+    wait for CLK_PERIOD*10;
     rst_n <= '1';
     game_en <= '1';
     game_blk_score_n <= '1';
+    wait for CLK_PERIOD*10;
+    
     start <= '1';
+    wait for CLK_PERIOD*10;
     dir(11 downto 8) <= x"4";
+    wait for CLK_PERIOD*2;
+    start <= '0';
     wait for CLK_PERIOD*2;
     start <= '0';
 

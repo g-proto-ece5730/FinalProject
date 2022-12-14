@@ -79,8 +79,7 @@ architecture behavioral of GameEngine is
 
   signal VS_prev : std_logic;
   signal descend_counter : natural;
-  constant DESCEND_RATE : integer := 20; -- for simulation
-  -- constant DESCEND_RATE : integer := 25_000_000;
+  constant DESCEND_RATE : integer := 20;
 
 begin
 
@@ -95,7 +94,7 @@ begin
 
   x <= game_hpos;
   y <= game_vpos;
-  start <= start_btn;
+  start <= not start_btn;
   dir <= dir_control(11 downto 8);
   -- rng_color <= rng_q;
 
@@ -103,7 +102,7 @@ begin
   begin
     if rising_edge(clk) then
       if (rst_n = '0') then
-        game_over <= '0';
+        game_over <= '1';
         floating_blocks <= '0';
         cleared <= '0';
         BLOCK_ARR <= (others => (others => x"0"));
@@ -111,7 +110,10 @@ begin
         descend_counter <= 0;
         add_points <= (others => '0');
       else
-        
+        if (start = '1') then 
+          game_over <= '0';
+        end if;
+
         VS_prev <= VS;
         if (VS = '1' and VS_prev = '0') then
           if (descend_counter = DESCEND_RATE) then
@@ -242,7 +244,7 @@ begin
   end process;
 
 
-  gfx_proc : process(all)
+  gfx_proc : process(clk)
   begin
     if (rst_n = '0') then
       game_data <= (others => '0');
