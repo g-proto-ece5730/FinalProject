@@ -48,6 +48,8 @@ ENTITY BlockFIFO IS
 		rdreq		: IN STD_LOGIC ;
 		sclr		: IN STD_LOGIC ;
 		wrreq		: IN STD_LOGIC ;
+		empty		: OUT STD_LOGIC ;
+		full		: OUT STD_LOGIC ;
 		q		: OUT STD_LOGIC_VECTOR (23 DOWNTO 0)
 	);
 END BlockFIFO;
@@ -55,7 +57,9 @@ END BlockFIFO;
 
 ARCHITECTURE SYN OF blockfifo IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (23 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC ;
+	SIGNAL sub_wire1	: STD_LOGIC ;
+	SIGNAL sub_wire2	: STD_LOGIC_VECTOR (23 DOWNTO 0);
 
 
 
@@ -78,12 +82,16 @@ ARCHITECTURE SYN OF blockfifo IS
 			rdreq	: IN STD_LOGIC ;
 			sclr	: IN STD_LOGIC ;
 			wrreq	: IN STD_LOGIC ;
+			empty	: OUT STD_LOGIC ;
+			full	: OUT STD_LOGIC ;
 			q	: OUT STD_LOGIC_VECTOR (23 DOWNTO 0)
 	);
 	END COMPONENT;
 
 BEGIN
-	q    <= sub_wire0(23 DOWNTO 0);
+	empty    <= sub_wire0;
+	full    <= sub_wire1;
+	q    <= sub_wire2(23 DOWNTO 0);
 
 	scfifo_component : scfifo
 	GENERIC MAP (
@@ -104,7 +112,9 @@ BEGIN
 		rdreq => rdreq,
 		sclr => sclr,
 		wrreq => wrreq,
-		q => sub_wire0
+		empty => sub_wire0,
+		full => sub_wire1,
+		q => sub_wire2
 	);
 
 
@@ -118,11 +128,11 @@ END SYN;
 -- Retrieval info: PRIVATE: AlmostEmptyThr NUMERIC "-1"
 -- Retrieval info: PRIVATE: AlmostFull NUMERIC "0"
 -- Retrieval info: PRIVATE: AlmostFullThr NUMERIC "-1"
--- Retrieval info: PRIVATE: CLOCKS_ARE_SYNCHRONIZED NUMERIC "0"
+-- Retrieval info: PRIVATE: CLOCKS_ARE_SYNCHRONIZED NUMERIC "1"
 -- Retrieval info: PRIVATE: Clock NUMERIC "0"
 -- Retrieval info: PRIVATE: Depth NUMERIC "16"
--- Retrieval info: PRIVATE: Empty NUMERIC "0"
--- Retrieval info: PRIVATE: Full NUMERIC "0"
+-- Retrieval info: PRIVATE: Empty NUMERIC "1"
+-- Retrieval info: PRIVATE: Full NUMERIC "1"
 -- Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "MAX 10"
 -- Retrieval info: PRIVATE: LE_BasedFIFO NUMERIC "0"
 -- Retrieval info: PRIVATE: LegacyRREQ NUMERIC "0"
@@ -159,6 +169,8 @@ END SYN;
 -- Retrieval info: CONSTANT: USE_EAB STRING "ON"
 -- Retrieval info: USED_PORT: clock 0 0 0 0 INPUT NODEFVAL "clock"
 -- Retrieval info: USED_PORT: data 0 0 24 0 INPUT NODEFVAL "data[23..0]"
+-- Retrieval info: USED_PORT: empty 0 0 0 0 OUTPUT NODEFVAL "empty"
+-- Retrieval info: USED_PORT: full 0 0 0 0 OUTPUT NODEFVAL "full"
 -- Retrieval info: USED_PORT: q 0 0 24 0 OUTPUT NODEFVAL "q[23..0]"
 -- Retrieval info: USED_PORT: rdreq 0 0 0 0 INPUT NODEFVAL "rdreq"
 -- Retrieval info: USED_PORT: sclr 0 0 0 0 INPUT NODEFVAL "sclr"
@@ -168,6 +180,8 @@ END SYN;
 -- Retrieval info: CONNECT: @rdreq 0 0 0 0 rdreq 0 0 0 0
 -- Retrieval info: CONNECT: @sclr 0 0 0 0 sclr 0 0 0 0
 -- Retrieval info: CONNECT: @wrreq 0 0 0 0 wrreq 0 0 0 0
+-- Retrieval info: CONNECT: empty 0 0 0 0 @empty 0 0 0 0
+-- Retrieval info: CONNECT: full 0 0 0 0 @full 0 0 0 0
 -- Retrieval info: CONNECT: q 0 0 24 0 @q 0 0 24 0
 -- Retrieval info: GEN_FILE: TYPE_NORMAL BlockFIFO.vhd TRUE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL BlockFIFO.inc FALSE

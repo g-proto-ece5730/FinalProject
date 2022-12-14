@@ -4,30 +4,26 @@ use ieee.numeric_std.all;
 
 entity ColorLUT is
     port (
-      en  : std_logic;
-      sel : unsigned(2 downto 0);
-      rgb : std_logic_vector(23 downto 0)
+      en  : in std_logic;
+      sel : in std_logic_vector(2 downto 0);
+      rgb : out std_logic_vector(23 downto 0)
     );
 end entity ColorLUT;
 
 
 architecture behavioral of ColorLUT is
 
-    type COLOR_T is array(0 to 4) of std_logic_vector(23 to 0);
-    constant COLOR_ARRAY : COLOR_T := (
-        (X"000000", -- black
-         X"FF0000", -- red
-         X"00FF00", -- green
-         X"0000FF", -- blue
-         X"FFFF00" -- yellow
-    ));
-
-    signal sel_color   : natural;
+    type COLOR_ARR_T is array(0 to 4) of std_logic_vector(23 downto 0);
+    constant COLOR_ARR : COLOR_ARR_T := (
+        x"000000", -- black
+        x"FF0000", -- red
+        x"00FF00", -- green
+        x"0000FF", -- blue
+        x"FFFF00"  -- yellow
+    );
 
 begin
 
-    sel_color   <= to_integer(sel);
-
-    rgb <= COLOR_ARRAY(0) when (en = '0') else COLOR_ARRAY(sel_color);
+    rgb <= COLOR_ARR(to_integer(unsigned(sel))) when (en = '1') else (others => '0');
 
 end architecture behavioral;

@@ -1,4 +1,5 @@
 .vscode/
+.qsys_edit/
 db/
 incremental_db/
 simulation/

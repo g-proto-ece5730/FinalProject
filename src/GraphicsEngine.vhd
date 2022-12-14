@@ -11,15 +11,15 @@ entity GraphicsEngine is
         -- Game Engine port group
         game_en          : out std_logic;
         game_blk_score_n : out std_logic;
-        game_hpos        : out std_logic_vector(3 downto 0);
-        game_vpos        : out std_logic_vector(3 downto 0);
+        game_hpos        : out unsigned(3 downto 0);
+        game_vpos        : out unsigned(3 downto 0);
         game_data        : in std_logic_vector(3 downto 0);
 
         -- VGA port group
         vga_x     : in unsigned(9 downto 0);
         vga_y     : in unsigned(8 downto 0);
         vga_valid : in std_logic;
-        vga_rgb   : out std_logic
+        vga_rgb   : out std_logic_vector(23 downto 0)
     );
 end entity GraphicsEngine;
 
@@ -31,9 +31,9 @@ architecture behavioral of GraphicsEngine is
     --------------------------------------------------
     component ColorLUT is
         port (
-            en  : std_logic;
-            sel : std_logic_vector(2 downto 0);
-            rgb : std_logic_vector(23 downto 0)
+            en  : in std_logic;
+            sel : in std_logic_vector(2 downto 0);
+            rgb : out std_logic_vector(23 downto 0)
         );
     end component ColorLUT;
     signal color_en  : std_logic;
@@ -44,16 +44,20 @@ architecture behavioral of GraphicsEngine is
         port (
             clock   : in std_logic;
             sclr    : in std_logic;
-            wreq    : in std_logic;
+            wrreq   : in std_logic;
             data    : in std_logic_vector (23 downto 0);
             rdreq   : in std_logic;
-            q       : out std_logic_vector(23 downto 0)
+            q       : out std_logic_vector(23 downto 0);
+            full    : out std_logic;
+            empty   : out std_logic
         );
     end component BlockFIFO;
     signal bfifo_wreq : std_logic;
     signal bfifo_din  : std_logic_vector(23 downto 0);
     signal bfifo_rack : std_logic;
     signal bfifo_dout : std_logic_vector(23 downto 0);
+    signal bfifo_full : std_logic;
+    signal bfifo_empty: std_logic;
 
 
     component FontLUT is
@@ -75,7 +79,7 @@ architecture behavioral of GraphicsEngine is
         port (
             clock   : in std_logic;
             sclr    : in std_logic;
-            wreq    : in std_logic;
+            wrreq   : in std_logic;
             data    : in std_logic_vector(0 downto 0);
             rdreq   : in std_logic;
             q       : out std_logic_vector(0 downto 0)
@@ -104,7 +108,7 @@ architecture behavioral of GraphicsEngine is
 
     constant BORDER_X   : natural := GRID_X - 1;
     constant BORDER_Y   : natural := GRID_Y - 1;
-    constant BORDER_X2  : nautral := GRID_X2 + 1;
+    constant BORDER_X2  : natural := GRID_X2 + 1;
     constant BORDER_Y2  : natural := GRID_Y2 + 1;
 
     constant FONT_W     : natural := 8;
@@ -121,7 +125,7 @@ architecture behavioral of GraphicsEngine is
 
 
     --------------------------------------------------
-    -- BEGIN: WIRES
+    -- BEGIN: INTERNAL SIGNALS
     --------------------------------------------------
     signal rst             : std_logic;
     signal is_blk_y        : std_logic;
@@ -133,8 +137,9 @@ architecture behavioral of GraphicsEngine is
     signal is_pre_score_x  : std_logic;
     signal is_pre_score_x2 : std_logic;
     signal is_post_score_x : std_logic;
+    signal is_post_score_x2: std_logic;
     --------------------------------------------------
-    -- END: WIRES
+    -- END: INTERNAL SIGNALS
     --------------------------------------------------
 
 
@@ -148,6 +153,8 @@ architecture behavioral of GraphicsEngine is
         FETCH_SCORE
     );
     signal prefetch_state       : PREFETCH_STATE_T;
+    signal prefetch_hpos        : natural range 0 to GRID_W-1;
+    signal prefetch_vpos        : natural range 0 to GRID_H-1;
     signal prefetch_blk_y       : natural range 0 to BLOCK_H-1;
     signal prefetch_font_y      : natural range 0 to FONT_H-1;
     signal prefetch_font_vscale : natural range 0 to FONT_SCALE-1;
@@ -155,14 +162,15 @@ architecture behavioral of GraphicsEngine is
     -- Draw FSM
     type DRAW_STATE_T is (
         DRAW_IDLE,
-        DRAW_BORDER_L
+        DRAW_BORDER_L,
         DRAW_BLOCKS,
-        DRAW_ORDER_R,
-        DRAW_SCORE
-        DRAW_BORDER_B,
+        DRAW_BORDER_R,
+        DRAW_SCORE,
+        DRAW_BORDER_B
     );
-    signal draw_state : DRAW_STATE_T;
-    signal draw_blk_x : natural range 0 to BLOCK_W-1;
+    signal draw_state  : DRAW_STATE_T;
+    signal draw_blk_x  : natural range 0 to BLOCK_W-1;
+    signal draw_hscale : natural range 0 to FONT_SCALE-1;
     --------------------------------------------------
     -- END: STATE MACHINES
     --------------------------------------------------
@@ -183,10 +191,12 @@ begin
         port map (
             clock   => pxclk,
             sclr    => rst,
-            wreq    => bfifo_wreq,
+            wrreq   => bfifo_wreq,
             data    => bfifo_din,
             rdreq   => bfifo_rack,
-            q       => bfifo_dout
+            q       => bfifo_dout,
+            full    => bfifo_full,
+            empty   => bfifo_empty
         );
 
     FontLUT_0 : FontLUT
@@ -202,7 +212,7 @@ begin
         port map (
             clock   => pxclk,
             sclr    => rst,
-            wreq    => ffifo_wreq,
+            wrreq   => ffifo_wreq,
             data    => ffifo_din,
             rdreq   => ffifo_rack,
             q       => ffifo_dout
@@ -215,7 +225,7 @@ begin
     --------------------------------------------------
     -- BEGIN: WIRING
     --------------------------------------------------
-    rst             <= ~rst_n
+    rst             <= not rst_n;
     is_blk_y        <= '1' when (vga_valid = '1') and (to_integer(vga_y) >= GRID_Y) and (to_integer(vga_y) <= GRID_Y2) else '0';
     is_score_y      <= '1' when (vga_valid = '1') and (to_integer(vga_y) >= SCORE_Y) and (to_integer(vga_y) <= SCORE_Y2) else '0';
     is_border_b_y   <= '1' when (vga_valid = '1') and (to_integer(vga_y) = BORDER_Y2) else '0';
@@ -224,18 +234,28 @@ begin
     is_post_grid_x2 <= '1' when (vga_valid = '1') and (to_integer(vga_x) = GRID_X2) else '0';
     is_pre_score_x  <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 2) else '0';
     is_pre_score_x2 <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X - 1) else '0';
-    is_post_score_x <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 1) else '0'
+    is_post_score_x <= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 2) else '0';
+    is_post_score_x2<= '1' when (vga_valid = '1') and (to_integer(vga_x) = SCORE_X2 - 1) else '0';
     -- END: WIRING
     --------------------------------------------------
-
 
     --------------------------------------------------
     -- BEGIN: PREFETCH FSM
     --------------------------------------------------
-    color_sel <= game_data;
-    font_sel  <= game_data;
-    bfifo_din <= color_rgb;
-    ffifo_din <= font_px;
+    -- process (all)
+    -- begin
+    --     case prefetch_hpos is
+    --         when 2 => font_sel <= x"0";
+    --         when others => font_sel <= x"9";
+    --     end case;
+    -- end process;
+    game_hpos    <= to_unsigned(prefetch_hpos, game_hpos'length);
+    game_vpos    <= to_unsigned(prefetch_vpos, game_vpos'length);
+    color_sel    <= game_data(2 downto 0);
+    --font_sel     <= unsigned(game_data);
+    font_sel <= x"0";
+    bfifo_din    <= color_rgb;
+    ffifo_din(0) <= font_px;
     prefetch_proc : process (pxclk)
     begin
         if rising_edge(pxclk) then
@@ -250,48 +270,48 @@ begin
                 case prefetch_state is
 
                     when PREFETCH_IDLE =>
-                        if (vga_valid = '1') and (vga_x = (others => '0')) and (is_blk_y = '1') then
-                            prefetch_state      <= FETCH_BLOCKS;
-                            game_en             <= '1';
-                            game_block_score_n  <= '1';
-                            game_hpos           <= (others => '0');
-                            color_en            <= '1';
-                            bfifo_wreq          <= '1';
-                            if (to_integer(vga_y) = GRID_Y) then
-                                game_vpos       <= (others => '0');
+                        if (vga_valid = '1') and (vga_x = 0) and (is_blk_y = '1') then
+                            prefetch_state   <= FETCH_BLOCKS;
+                            game_en          <= '1';
+                            game_blk_score_n <= '1';
+                            prefetch_hpos    <= 0;
+                            color_en         <= '1';
+                            bfifo_wreq       <= '1';
+                            if (vga_y = GRID_Y) then
+                                prefetch_vpos   <= 0;
                                 prefetch_blk_y  <= 0;
                             else
                                 if (prefetch_blk_y < BLOCK_H-1) then
                                     prefetch_blk_y <= prefetch_blk_y + 1;
                                 else
-                                    game_vpos       <= game_vpos + '1';
+                                    prefetch_vpos   <= prefetch_vpos + 1;
                                     prefetch_blk_y  <= 0;
                                 end if;
                             end if;
                         end if;
 
                     when FETCH_BLOCKS =>
-                        if (to_integer(game_hpos) < BLOCK_W-1) then
-                            game_hpos <= game_hpos + '1';
+                        if (prefetch_hpos < GRID_W-1) then
+                            prefetch_hpos <= prefetch_hpos + 1;
                         else
                             color_en   <= '0';
                             bfifo_wreq <= '0';
                             if (is_score_y = '1') then
-                                prefetch_state      <= FETCH_SCORE;
-                                game_block_score _n <= '0';
-                                game_hpos           <= (others => '0');
-                                font_en             <= '1';
-                                font_x              <= (others => '0');
-                                ffifo_wreq          <= '1';
-                                if (to_integer(vga_y) = SCORE_X) then
+                                prefetch_state   <= FETCH_SCORE;
+                                game_blk_score_n <= '0';
+                                prefetch_hpos    <= 0;
+                                font_en          <= '1';
+                                font_x           <= (others => '0');
+                                ffifo_wreq       <= '1';
+                                if (vga_y = SCORE_X) then
                                     font_y               <= (others => '0');
                                     prefetch_font_vscale <= 0;
                                 else
-                                    if (prefetch_font_vscale >= FONT_SCALE-1) then
-                                        font_y               <= font_y + '1';
-                                        prefetch_font_vscale <= 0;
-                                    else
+                                    if (prefetch_font_vscale < FONT_SCALE-1) then
                                         prefetch_font_vscale <= prefetch_font_vscale + 1;
+                                    else
+                                        font_y               <= font_y + 1;
+                                        prefetch_font_vscale <= 0;
                                     end if;
                                 end if;
                             else
@@ -301,14 +321,12 @@ begin
                         end if;
 
                     when FETCH_SCORE =>
-                        if (to_integer(font_x) < FONT_W-1) then
-                            game_en   <= '0';
+                        if (font_x < FONT_W-1) then
                             font_x    <= font_x + 1;
                         else
-                            if (to_integer(game_hpos) < SCORE_W-1) then
-                                game_en   <= '1';
-                                game_hpos <= game_hpos + '1';
-                                font_x    <= (others => '0');
+                            if (prefetch_hpos < SCORE_W-1) then
+                                prefetch_hpos <= prefetch_hpos + 1;
+                                font_x        <= (others => '0');
                             else
                                 prefetch_state  <= PREFETCH_IDLE;
                                 game_en         <= '0';
@@ -342,7 +360,7 @@ begin
         if rising_edge(pxclk) then
             if (rst_n = '0') then
                 draw_state  <= DRAW_IDLE;
-                vga_rgb     <= (others => '0');
+                vga_rgb     <= x"000000";
                 bfifo_rack  <= '0';
                 ffifo_rack  <= '0';
             else
@@ -354,8 +372,9 @@ begin
                             if (is_pre_grid_x = '1') then
                                 -- draw left border and get first block color
                                 draw_state  <= DRAW_BORDER_L;
-                                vga_rgb     <= (others => '1');
+                                vga_rgb     <= x"FFFFFF";
                                 bfifo_rack  <= '1';
+                                draw_hscale <= 0;
                             end if;
                         end if;
                         if (is_score_y = '1') then
@@ -367,14 +386,20 @@ begin
                             if (is_pre_score_x2 = '1') then
                                 -- start drawing score
                                 draw_state  <= DRAW_SCORE;
-                                vga_rgb     <= ffifo_dout;
+                                ffifo_rack  <= '0';
+                                if (ffifo_dout = "1") then
+                                    vga_rgb <= x"FFFFFF";
+                                else
+                                    vga_rgb <= x"000000";
+                                end if;
+                            end if;
                         end if;
                         if (is_border_b_y = '1') then
                             -- bottom border row
                             if (is_pre_grid_x = '1') then
                                 -- start botton border
                                 draw_state    <= DRAW_BORDER_B;
-                                vga_rgb       <= (others => '1');
+                                vga_rgb       <= x"FFFFFF";
                             end if;
                         end if;
 
@@ -382,22 +407,22 @@ begin
                         draw_state  <= DRAW_BLOCKS;
                         vga_rgb     <= bfifo_dout;
                         bfifo_rack  <= '0';
-                        draw_blk_x  <= (others => '0');
+                        draw_blk_x  <= 0;
 
                     when DRAW_BLOCKS =>
                         if (draw_blk_x < BLOCK_W-1) then
-                            draw_blk_x <= draw_blk_x + '1';
+                            draw_blk_x <= draw_blk_x + 1;
                         else
                             -- end of block
                             if (is_post_grid_x2 = '1') then
                                 -- end of grid
                                 draw_state  <= DRAW_BORDER_R;
-                                vga_rgb     <= (others => '1');
+                                vga_rgb     <= x"FFFFFF";
                             else
                                 -- start next block
                                 vga_rgb     <= bfifo_dout;
                                 bfifo_rack  <= '0';
-                                draw_blk_x  <= (others => '0');
+                                draw_blk_x  <= 0;
                             end if;
                         end if;
                         if (draw_blk_x = BLOCK_W-2) and (is_post_grid_x = '0') then
@@ -407,19 +432,27 @@ begin
 
                     when DRAW_BORDER_R =>
                         draw_state  <= DRAW_IDLE;
-                        vga_rgb     <= (others => '0');
+                        vga_rgb     <= x"000000";
 
                     when DRAW_SCORE =>
-                        if (ffifo_rack = '1') then
-                            -- draw next score pixel
-                            vga_rgb <= ffifo_dout;
+                        if (is_post_score_x2 = '1') then
+                            draw_state  <= DRAW_IDLE;
+                            vga_rgb     <= x"000000";
                         else
-                            -- all pixels drawn
-                            draw_state <= DRAW_IDLE;
+                            if (draw_hscale < FONT_SCALE-1) then
+                                draw_hscale <= draw_hscale + 1;
+                            else
+                                if (ffifo_dout = "1") then
+                                    vga_rgb <= x"FFFFFF";
+                                else
+                                    vga_rgb <= x"000000";
+                                end if;
+                                ffifo_rack  <= '0';
+                                draw_hscale <= 0;
+                            end if;
                         end if;
-                        if (is_post_score_x = '1') then
-                            -- all pixels pulled from FIFO
-                            ffifo_rack <= '0';
+                        if (draw_hscale = FONT_SCALE-2) and (is_post_score_x = '0') then
+                            ffifo_rack  <= '1';
                         end if;
 
                     when DRAW_BORDER_B =>
@@ -429,7 +462,7 @@ begin
 
                     WHEN others =>
                         draw_state  <= DRAW_IDLE;
-                        vga_rgb     <= (others => '0');
+                        vga_rgb     <= x"000000";
                         bfifo_rack  <= '0';
                         ffifo_rack  <= '0';
 
