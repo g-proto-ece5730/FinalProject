@@ -23,8 +23,8 @@ architecture behavioral of GameEngine_TB is
       game_data      : out std_logic_vector(3 downto 0);
 
       -- RNG port group
-      rng_en : out std_logic;
-      rng_q  : in std_logic_vector(7 downto 0);
+      -- rng_en : out std_logic;
+      -- rng_q  : in std_logic_vector(7 downto 0);
 
       -- Audio Engine port group
       aud_en  : out std_logic;
@@ -36,12 +36,13 @@ architecture behavioral of GameEngine_TB is
     );
   end component;
 
-  signal clk, rst_n, VS, game_en, game_blk_score_n, rng_en, aud_en, start : std_logic;
+  signal clk, rst_n, VS, game_en, game_blk_score_n, aud_en, start : std_logic;
   signal game_hpos, game_vpos : unsigned(3 downto 0);
   signal game_data : std_logic_vector(3 downto 0);
-  signal rng_q : std_logic_vector(7 downto 0);
+  -- signal rng_q : std_logic_vector(7 downto 0);
   signal aud_sel : std_logic_vector(3 downto 0);
   signal dir_control : std_logic_vector(11 downto 0);
+  signal dir : unsigned(11 downto 0);
 
 begin
 
@@ -55,13 +56,15 @@ begin
       game_hpos         => game_hpos,
       game_vpos         => game_vpos,
       game_data      => game_data,
-      rng_en => rng_en,
-      rng_q  => rng_q,
+      -- rng_en => rng_en,
+      -- rng_q  => rng_q,
       aud_en  => aud_en,
       aud_sel => aud_sel,
       start_btn   => start,
       dir_control => dir_control
     );
+
+  dir_control <= std_logic_vector(dir);
 
   clk_process : process
   begin
@@ -80,14 +83,23 @@ begin
     game_hpos <= (others => '0');
     game_vpos <= (others => '0');
     start <= '0';
+    dir <= (others => '0');
 
     wait for CLK_PERIOD*2;
     rst_n <= '1';
     game_en <= '1';
     game_blk_score_n <= '1';
     start <= '1';
+    dir(11 downto 8) <= x"4";
     wait for CLK_PERIOD*2;
     start <= '0';
+
+    dir(11 downto 8) <= x"1";
+    wait for CLK_PERIOD*2;
+    -- for i in 0 to 15 loop
+    --   dir(11 downto 8) <= dir(11 downto 8) + x"1";
+    --   wait for CLK_PERIOD*5;
+    -- end loop;
 
     -- for i in 0 to 13 
     -- loop
@@ -100,7 +112,7 @@ begin
     --   end loop;
     -- end loop;
 
-    wait for CLK_PERIOD*5_000_000;
+    wait for CLK_PERIOD*500;
     
   end process;
 
