@@ -105,6 +105,7 @@ architecture behavioral of Top is
     signal game_hpos        : unsigned(3 downto 0);
     signal game_vpos        : unsigned(3 downto 0);
     signal game_data        : std_logic_vector(3 downto 0);
+    signal start_btn        : std_logic;
     signal dir_control      : std_logic_vector(11 downto 0);
 
     component GraphicsEngine is
@@ -164,6 +165,7 @@ begin
     --------------------------------------------------
     rst   <= not key(0);
     rst_n <= key(0);
+    start_btn <= not key(1);
     VGA_R <= vga_rgb(23 downto 20) when (vga_valid = '1') else (others => '0');
     VGA_G <= vga_rgb(15 downto 12) when (vga_valid = '1') else (others => '0');
     VGA_B <= vga_rgb(7  downto 4)  when (vga_valid = '1') else (others => '0');
@@ -212,7 +214,7 @@ begin
             game_hpos       => game_hpos,
             game_vpos       => game_vpos,
             game_data       => game_data,
-            start_btn       => '0',
+            start_btn       => start_btn,
             dir_control     => dir_control
         );
 
