@@ -77,8 +77,9 @@ architecture behavioral of GameEngine is
   signal score : unsigned(23 downto 0) := (others => '0');
   signal add_points : unsigned(7 downto 0);
 
+  signal VS_prev : std_logic;
   signal descend_counter : natural;
-  constant DESCEND_RATE : integer := 1; -- for simulation
+  constant DESCEND_RATE : integer := 20; -- for simulation
   -- constant DESCEND_RATE : integer := 25_000_000;
 
 begin
@@ -111,89 +112,92 @@ begin
         add_points <= (others => '0');
       else
         
-        if (descend_counter = DESCEND_RATE) then
-          rng_en <= '0';
-          descend_counter <= 0;
-          if (game_over = '0') then
-            floating_blocks <= '0';
-            for j in 0 to 12 loop
-              for i in 0 to 8 loop
-                -- main descending block 
-                if (BLOCK_ARR(j)(i)(3) = '1') then 
-                  -- BLOCK_ARR(j)(lane) <= BLOCK_ARR(j)(i);
-                  -- BLOCK_ARR(j+1)(i) <= x"0";
-                  if (BLOCK_ARR(j+1)(lane) /= x"0") then -- main block landed on another block
-                    BLOCK_ARR(j)(lane) <= "0" & BLOCK_ARR(j)(i)(2 downto 0);
-                  elsif (j >= 12) then  -- main block landed on bottom
-                    BLOCK_ARR(j+1)(lane) <= "0" & BLOCK_ARR(j)(i)(2 downto 0);
-                    BLOCK_ARR(j)(i) <= x"0";
-                  else
-                    BLOCK_ARR(j+1)(lane) <= BLOCK_ARR(j)(i);
+        VS_prev <= VS;
+        if (VS = '1' and VS_prev = '0') then
+          if (descend_counter = DESCEND_RATE) then
+            rng_en <= '0';
+            descend_counter <= 0;
+            if (game_over = '0') then
+              floating_blocks <= '0';
+              for j in 0 to 12 loop
+                for i in 0 to 8 loop
+                  -- main descending block 
+                  if (BLOCK_ARR(j)(i)(3) = '1') then 
+                    -- BLOCK_ARR(j)(lane) <= BLOCK_ARR(j)(i);
+                    -- BLOCK_ARR(j+1)(i) <= x"0";
+                    if (BLOCK_ARR(j+1)(lane) /= x"0") then -- main block landed on another block
+                      BLOCK_ARR(j)(lane) <= "0" & BLOCK_ARR(j)(i)(2 downto 0);
+                    elsif (j >= 12) then  -- main block landed on bottom
+                      BLOCK_ARR(j+1)(lane) <= "0" & BLOCK_ARR(j)(i)(2 downto 0);
+                      BLOCK_ARR(j)(i) <= x"0";
+                    else
+                      BLOCK_ARR(j+1)(lane) <= BLOCK_ARR(j)(i);
+                      BLOCK_ARR(j)(i) <= x"0";
+                      floating_blocks <= '1';
+                    end if;
+                  -- end if;
+
+                  -- search for other floating blocks and drop them
+                  elsif (BLOCK_ARR(j)(i) /= x"0" AND BLOCK_ARR(j+1)(i) = x"0") then
+                    BLOCK_ARR(j+1)(i) <= BLOCK_ARR(j)(i);
                     BLOCK_ARR(j)(i) <= x"0";
                     floating_blocks <= '1';
                   end if;
-                -- end if;
+                end loop;
+              end loop;
 
-                -- search for other floating blocks and drop them
-                elsif (BLOCK_ARR(j)(i) /= x"0" AND BLOCK_ARR(j+1)(i) = x"0") then
-                  BLOCK_ARR(j+1)(i) <= BLOCK_ARR(j)(i);
-                  BLOCK_ARR(j)(i) <= x"0";
+              if (floating_blocks = '0') then
+                -- search for and clear horizontal rows of 3
+                cleared <= '0';
+                for j in 13 downto 0 loop
+                  for i in 0 to 6 loop
+                    if (BLOCK_ARR(j)(i) /= x"0") then
+                      if (BLOCK_ARR(j)(i) = BLOCK_ARR(j)(i+1) AND BLOCK_ARR(j)(i) = BLOCK_ARR(j)(i+2)) then
+                        BLOCK_ARR(j)(i) <= x"0";
+                        BLOCK_ARR(j)(i+1) <= x"0";
+                        BLOCK_ARR(j)(i+2) <= x"0";
+                        cleared <= '1';
+                        add_points <= add_points + 3;
+                      end if;
+                    end if;
+                  end loop; 
+                end loop;
+
+                -- search for and clear vertical rows of 3
+                for i in 0 to 8 loop
+                  for j in 13 downto 2 loop
+                    if (BLOCK_ARR(j)(i) /= x"0") then
+                      if (BLOCK_ARR(j)(i) = BLOCK_ARR(j-1)(i) AND BLOCK_ARR(j)(i) = BLOCK_ARR(j-2)(i)) then
+                        BLOCK_ARR(j)(i) <= x"0";
+                        BLOCK_ARR(j-1)(i) <= x"0";
+                        BLOCK_ARR(j-2)(i) <= x"0";
+                        cleared <= '1';
+                        add_points <= add_points + 3;
+                      end if;
+                    end if;
+                  end loop; 
+                end loop;
+              end if;
+
+              -- game over or request new block color from rng
+              if (cleared = '0' and floating_blocks = '0') then
+
+                if (BLOCK_ARR(1) /= (x"0",x"0",x"0",x"0",x"0",x"0",x"0",x"0",x"0")) then 
+                  game_over <= '1';
+                else
+                  rng_en <= '1';
                   floating_blocks <= '1';
                 end if;
-              end loop;
-            end loop;
-
-            if (floating_blocks = '0') then
-              -- search for and clear horizontal rows of 3
-              cleared <= '0';
-              for j in 13 downto 0 loop
-                for i in 0 to 6 loop
-                  if (BLOCK_ARR(j)(i) /= x"0") then
-                    if (BLOCK_ARR(j)(i) = BLOCK_ARR(j)(i+1) AND BLOCK_ARR(j)(i) = BLOCK_ARR(j)(i+2)) then
-                      BLOCK_ARR(j)(i) <= x"0";
-                      BLOCK_ARR(j)(i+1) <= x"0";
-                      BLOCK_ARR(j)(i+2) <= x"0";
-                      cleared <= '1';
-                      add_points <= add_points + 3;
-                    end if;
-                  end if;
-                end loop; 
-              end loop;
-
-              -- search for and clear vertical rows of 3
-              for i in 0 to 8 loop
-                for j in 13 downto 2 loop
-                  if (BLOCK_ARR(j)(i) /= x"0") then
-                    if (BLOCK_ARR(j)(i) = BLOCK_ARR(j-1)(i) AND BLOCK_ARR(j)(i) = BLOCK_ARR(j-2)(i)) then
-                      BLOCK_ARR(j)(i) <= x"0";
-                      BLOCK_ARR(j-1)(i) <= x"0";
-                      BLOCK_ARR(j-2)(i) <= x"0";
-                      cleared <= '1';
-                      add_points <= add_points + 3;
-                    end if;
-                  end if;
-                end loop; 
-              end loop;
-            end if;
-
-            -- game over or request new block color from rng
-            if (cleared = '0' and floating_blocks = '0') then
-
-              if (BLOCK_ARR(1) /= (x"0",x"0",x"0",x"0",x"0",x"0",x"0",x"0",x"0")) then 
-                game_over <= '1';
-              else
-                rng_en <= '1';
-                floating_blocks <= '1';
               end if;
-            end if;
-          end if; -- game_over
-        else
-          descend_counter <= descend_counter + 1;
+            end if; -- game_over
+          else
+            descend_counter <= descend_counter + 1;
+          end if;
         end if;
 
         -- request block color from rng until we get a valid number between 1 and 4
         if (rng_en = '1') then
-          if (rng_color(3 downto 0) > x"0" and rng_color(3 downto 0) < x"5") then
+          if (rng_color(3 downto 0) > x"0" and rng_color(2 downto 0) < x"5") then
             BLOCK_ARR(0)(lane) <= '1' & rng_color(2 downto 0); -- BLOCK_ARR(0)(4) should eventually be BLOCK_ARR(0)(X) where X is the location from ADC
             floating_blocks <= '1';
             rng_en <= '0';
