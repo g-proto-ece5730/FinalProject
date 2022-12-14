@@ -26,6 +26,11 @@ becomes stationary, one when a set of 3 or more cubes disappears, and one when t
 # Procedure
 
 The design was divided into three main submodules: GameEngine, GraphicsEngine, and VGA.
+The system block diagram is shown in Figure 1.
+
+![System block Diagram](docs/BlockDiagram.png)
+**Figure 1.** System block diagram
+
 The GameEngine handled the movement of blocks within the enclosure, the position of static blocks, and the player's score.
 The enclosure was constantly scanned for any "floating" blocks, or blocks that were not stationary on another block or at the bottom of the enclosure.
 Once all blocks were found to be stationary, the enclosure was then scanned for any horizontal or vertical sequence of 3 cubes of the same color.
@@ -45,6 +50,23 @@ Before moving a block, the next space needed to be checked as to whether it was 
 When passing a block color from the GameEngine to the GraphicsEngine, the color was given a code value.
 To distinguish between the single, falling, controllable block, a '1' was appended to the code which was removed once it became stationary.
 
+The GraphicsEngine has two state machines.
+A block diagram of this sub-system is shown in Figure 2.
+The first one fetches the block colors codes and score from the GameEngine.
+It then decodes the block colors codes to RGB values, and the decimal score to a font matrix.
+The block RGB and font are each inserted to their respective FIFOs.
+The second state machine removes these values from the FIFOs and draws them to the screen.
+The fetch state machine caused the most problems in the design, and never got the score to work properly.
+Import parts of the intended behavior of the two state machines are shown in Figures 3 and 4.
+
+![GraphicsEngine Block Diagram](docs/GraphicsEngine/GraphicsEngine_BlockDiagram.png)
+**Figure 2.** GraphicsEngine block diagram
+
+![Prefetch Waveform](docs/GraphicsEngine/prefetch_waveform.png)
+**Figure 3.** Prefetch waveform
+
+![Draw Waveform](docs/GraphicsEngine/draw_waveform.png)
+**Figure 4.** Draw waveform
 
 
 # Results
@@ -59,9 +81,12 @@ The score would not display properly.
 A series of zeros would display, but when sending other numbers the score would print several numbers in one position.
 The sounds were not implemented as the majority of design time went into displaying the game and making the game functional.
 The ADC was trivial to implement as the design was brought from a previous lab.
-The RNG worked as expected, implementing a pseudo-random number generator. 
+The RNG worked as expected, implementing a pseudo-random number generator.
 
 # Conclusion
 
+It was essential to design the working of the system before beginning implementation.
+This included breaking the system into multiple sub-systems and defining their interfaces to allow them to be easily connected.
+One part of the initial design that was notably helpful was the Graphics engine wave forms in Figures 3 and 4.
 
-![Block Diagram](docs/block_diagram.drawio.svg)
+
