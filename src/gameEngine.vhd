@@ -94,7 +94,7 @@ begin
 
   x <= game_hpos;
   y <= game_vpos;
-  start <= start_btn;
+  start <= not start_btn;
   dir <= dir_control(11 downto 8);
   -- rng_color <= rng_q;
 
@@ -110,7 +110,10 @@ begin
         descend_counter <= 0;
         add_points <= (others => '0');
       else
-        
+        if (start = '1') then 
+          game_over <= '0';
+        end if;
+
         if (descend_counter = DESCEND_RATE) then
           rng_en <= '0';
           descend_counter <= 0;
@@ -238,7 +241,7 @@ begin
   end process;
 
 
-  gfx_proc : process(all)
+  gfx_proc : process(clk)
   begin
     if (rst_n = '0') then
       game_data <= (others => '0');
