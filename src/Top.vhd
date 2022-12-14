@@ -61,15 +61,11 @@ architecture behavioral of Top is
             VS    : in std_logic;
 
             -- Graphics Engine port group
-            en          : in std_logic;
-            blk_score_n : in std_logic;
-            hpos        : in unsigned(3 downto 0);
-            vpos        : in unsigned(3 downto 0);
-            data        : out std_logic_vector(3 downto 0);
-
-            -- RNG port group
-            rng_en : out std_logic;
-            rng_q  : in std_logic_vector(7 downto 0);
+            game_en          : in std_logic;
+            game_blk_score_n : in std_logic;
+            game_hpos        : in unsigned(3 downto 0);
+            game_vpos        : in unsigned(3 downto 0);
+            game_data        : out std_logic_vector(3 downto 0);
 
             -- Audio Engine port group
             aud_en  : out std_logic;
@@ -163,17 +159,16 @@ begin
 
     GameEngine_0 : GameEngine
         port map (
-            clk         => pxclk,
-            rst_n       => rst_n,
-            VS          => VS,
-            en          => game_en,
-            blk_score_n => game_blk_score_n,
-            hpos        => game_hpos,
-            vpos        => game_vpos,
-            data        => game_data,
-            rng_q       => (others => '0'),
-            start_btn   => '0',
-            dir_control => (others => '0')
+            clk             => pxclk,
+            rst_n           => rst_n,
+            VS              => VS,
+            game_en         => game_en,
+            game_blk_score_n=> game_blk_score_n,
+            game_hpos       => game_hpos,
+            game_vpos       => game_vpos,
+            game_data       => game_data,
+            start_btn       => '0',
+            dir_control     => (others => '0')
         );
 
     GraphicsEngine_0 : GraphicsEngine

@@ -298,6 +298,11 @@ set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME Top_TB -section_id Top_TB
 set_global_assignment -name EDA_TEST_BENCH_FILE src/Top_TB.vhd -section_id Top_TB
 set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
+set_global_assignment -name VHDL_FILE src/rng_TB.vhd
+set_global_assignment -name VHDL_FILE src/rng.vhd
+set_global_assignment -name VHDL_FILE src/gameEngine_TB.vhd
+set_global_assignment -name VHDL_FILE src/gameEngine.vhd
+set_global_assignment -name VHDL_FILE src/ADC_Controller.vhd
 set_global_assignment -name VHDL_FILE src/GameEngine.vhd
 set_global_assignment -name VHDL_FILE src/ColorLUT.vhd
 set_global_assignment -name VHDL_FILE src/VGA.vhd
@@ -310,4 +315,6 @@ set_global_assignment -name QIP_FILE ip/BlockFIFO.qip
 set_global_assignment -name QIP_FILE ip/PLL.qip
 set_global_assignment -name VHDL_TEST_BENCH_FILE src/Top_TB.vhd
 set_global_assignment -name VHDL_TEST_BENCH_FILE src/FontLUT_TB.vhd
+set_global_assignment -name VHDL_TEST_BENCH_FILE src/rng_TB.vhd
+set_global_assignment -name VHDL_TEST_BENCH_FILE src/gameEngine_TB.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
