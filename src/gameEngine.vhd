@@ -102,7 +102,7 @@ begin
   begin
     if rising_edge(clk) then
       if (rst_n = '0') then
-        game_over <= '0';
+        game_over <= '1';
         floating_blocks <= '0';
         cleared <= '0';
         BLOCK_ARR <= (others => (others => x"0"));
