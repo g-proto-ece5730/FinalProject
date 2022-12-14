@@ -1,8 +1,16 @@
 <sld_project_info>
   <project>
-    <hash md5_digest_80b="cb2628cbc232e75e6556"/>
+    <hash md5_digest_80b="0e3a7ad40ac753497ff1"/>
   </project>
   <file_info>
     <file device="10M50DAF484C7G" path="FinalProject.sof" usercode="0xFFFFFFFF"/>
   </file_info>
+  <sld_infos>
+    <sld_info hpath="ADC_Controller:ADC_Ctrl_0|ADC:ADC0" name="ADC0">
+      <assignment_values>
+        <assignment_value text="QSYS_NAME ADC HAS_SOPCINFO 1 GENERATION_ID 1671000323"/>
+      </assignment_values>
+      <parameters/>
+    </sld_info>
+  </sld_infos>
 </sld_project_info>

@@ -45,6 +45,16 @@ architecture behavioral of Top is
     --------------------------------------------------
     -- BEGIN: COMPONENTS
     --------------------------------------------------
+    component ADC_PLL
+        port (
+            inclk0  : in std_logic := '0';
+            c0      : out std_logic;
+            locked  : out std_logic 
+        );
+    end component;
+    signal adc_pll_clk    : std_logic;
+    signal adc_pll_locked : std_logic;
+
     component PLL is
         port (
             areset  : in std_logic := '0';
@@ -53,6 +63,20 @@ architecture behavioral of Top is
         );
     end component;
     signal pxclk : std_logic;
+
+    component ADC_Controller is
+        generic (
+            CLK_FREQ : integer;
+            SAMPLE_FREQ : integer
+        );
+        port (
+            clk             : in std_logic;
+            rst_n           : in std_logic;
+            adc_pll_clk     : in std_logic;
+            adc_pll_locked  : in std_logic;
+            dout            : out std_logic_vector(11 downto 0)
+        );
+    end component ADC_Controller;
 
     component GameEngine is
         port (
@@ -81,6 +105,7 @@ architecture behavioral of Top is
     signal game_hpos        : unsigned(3 downto 0);
     signal game_vpos        : unsigned(3 downto 0);
     signal game_data        : std_logic_vector(3 downto 0);
+    signal dir_control      : std_logic_vector(11 downto 0);
 
     component GraphicsEngine is
         port (
@@ -150,11 +175,31 @@ begin
     --------------------------------------------------
     -- BEGIN: INSTANTIATIONS
     --------------------------------------------------
-    PLL_0 : PLL
+    PLL0 : ADC_PLL
+        port map (
+            inclk0  => ADC_CLK_10,
+            c0      => adc_pll_clk,
+            locked  => adc_pll_locked
+        );
+
+    PLL_1 : PLL
         port map (
             areset  => '0',
             inclk0  => MAX10_CLK1_50,
             c0      => pxclk
+        );
+
+    ADC_Ctrl_0 : ADC_Controller 
+        generic map (
+            CLK_FREQ => 50_000_000,
+            SAMPLE_FREQ => 10_000
+        )
+        port map(
+            clk             => MAX10_CLK1_50,
+            rst_n           => rst_n,
+            adc_pll_clk     => adc_pll_clk,
+            adc_pll_locked  => adc_pll_locked,
+            dout            => dir_control
         );
 
     GameEngine_0 : GameEngine
@@ -168,7 +213,7 @@ begin
             game_vpos       => game_vpos,
             game_data       => game_data,
             start_btn       => '0',
-            dir_control     => (others => '0')
+            dir_control     => dir_control
         );
 
     GraphicsEngine_0 : GraphicsEngine
